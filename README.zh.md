@@ -44,7 +44,7 @@ Exported 23 messages (41 tool calls, 128450 tokens) → /path/to/cwd/dsh-transcr
 
 - **本地开发**：`npm ci && npm run doctor && npm run typecheck && npm test && npm run bundle`（Node 20/22；`npm run doctor` 自动修复未发布的 peer 依赖，见 [CONTRIBUTING.md](CONTRIBUTING.md) 第零步）。
 - **源码入口**：[`src/render/html.ts`](src/render/html.ts)、[`src/render/markdown.ts`](src/render/markdown.ts)、[`src/mask.ts`](src/mask.ts)——完整源码地图见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-- **当前缺口**：[#5](https://github.com/kittimzhe/dsh-session-export/issues/5)、[#6](https://github.com/kittimzhe/dsh-session-export/issues/6)、[#7](https://github.com/kittimzhe/dsh-session-export/issues/7)——或浏览 [`good first issue` 标签](https://github.com/kittimzhe/dsh-session-export/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)。
+- **当前缺口**：前三项（#5 diff 块撑破、#6 连接串脱敏、#7 排行条锚点）均已交付——余下工作浏览 [issues](https://github.com/kittimzhe/dsh-session-export/issues) 与 [`good first issue` 标签](https://github.com/kittimzhe/dsh-session-export/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)。
 - **规矩**：行为变更必须带测试；文档必须 `README.md` 与 `README.zh.md` 同步改；版本发布由维护者执行。详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 命令契约
@@ -198,11 +198,7 @@ dsh plugin --profile web add github:kittimzhe/dsh-session-export
 
 ## 当前缺口
 
-已交付的路线图项见 [CHANGELOG](CHANGELOG.md)；未完成的工作一律进 issue：
-
-- [#5 —— Markdown：`+`/`-` 开头的内容行不得撑破 diff 块](https://github.com/kittimzhe/dsh-session-export/issues/5)
-- [#6 —— 脱敏：带凭据的连接串模式（postgres/redis/mysql URL）](https://github.com/kittimzhe/dsh-session-export/issues/6)
-- [#7 —— HTML 报告：工具排行条锚点到该工具第一次调用](https://github.com/kittimzhe/dsh-session-export/issues/7)
+已交付的路线图项见 [CHANGELOG](CHANGELOG.md)；未完成的工作一律进 [issues](https://github.com/kittimzhe/dsh-session-export/issues)。原前三项（#5、#6、#7）均已交付。
 
 ## 已知限制
 
@@ -211,7 +207,7 @@ dsh plugin --profile web add github:kittimzhe/dsh-session-export
 - Token 汇总按 assistant 消息的 `usage` 记录累加；适配器未上报 usage 的步骤计零。
 - 成本为牌价估算；未建模缓存命中折扣（`cacheReadTokens` 不单独计价）。
 - 脱敏基于模式匹配、尽力而为：覆盖常见凭据形态，不保证遮蔽所有可能的秘密。
-- Markdown 代码块内部不做转义；diff 内容自带 `+`/`-` 行首时会渲染为附加 diff 行（修复中，见 [#5](https://github.com/kittimzhe/dsh-session-export/issues/5)）。
+- Markdown 只对可能破坏代码块的内容做处理：`+`/`-` 开头的 diff 内容行重加前缀空格；含 ``` 行的内容体改用四反引号围栏；其余内容原样输出。
 - `/archive` 只出不进：DSH 没有写侧会话接缝，ZIP 是备份不是往返。
 
 ## 开发
