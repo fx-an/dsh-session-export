@@ -297,24 +297,51 @@ function renderTimeline(input: RenderInput, lang: ReportLang): string {
   return `<section class="card" id="timeline"><h2>${escapeHtml(t('turnTimeline', lang))}</h2>${rows.join('')}</section>`
 }
 
-/** Tool ranking bars. */
+/** Stable anchor id for the tool-call block at entry seq / content index. */
+function toolCallAnchor(seq: number, blockIndex: number): string {
+  return `tc-${seq}-${blockIndex}`
+}
+
+/**
+ * First transcript occurrence of each tool name, in entry order, as an
+ * anchor id — the target the ranking bars link to (#7).
+ */
+function firstToolCallAnchors(input: RenderInput): Map<string, string> {
+  const first = new Map<string, string>()
+  for (const entry of input.entries) {
+    const blocks = entry.message.content as readonly ContentBlock[]
+    blocks.forEach((block, index) => {
+      if (block.type === 'tool-call' && !first.has(block.name)) {
+        first.set(block.name, toolCallAnchor(entry.seq, index))
+      }
+    })
+  }
+  return first
+}
+
+/** Tool ranking bars; each links to the first call of that tool (#7). */
 function renderToolRanking(input: RenderInput, lang: ReportLang): string {
   const breakdown = input.stats?.toolBreakdown ?? []
   if (breakdown.length === 0) return ''
+  const first = firstToolCallAnchors(input)
   const max = breakdown[0]?.calls ?? 1
   const rows = breakdown.slice(0, 8).map((tool) => {
     const pct = (tool.calls / max) * 100
     const fail = tool.failures > 0 ? ` <span class="fail">${tool.failures}✗</span>` : ''
     const tip = escapeHtml(`${tool.name} · ${tf('tipTool', lang, { n: tool.calls })}`)
-    return `<div class="tool-row"><span class="tool-name" title="${escapeHtml(tool.name)}">${escapeHtml(tool.name)}</span><div class="tool-track"><div class="tool-bar" style="width:${pct.toFixed(1)}%" title="${tip}"></div></div><span class="tool-count">${tool.calls}${fail}</span></div>`
+    const link = first.get(tool.name)
+    const name = link !== undefined
+      ? `<a class="tool-name" href="#${link}" title="${escapeHtml(tool.name)}">${escapeHtml(tool.name)}</a>`
+      : `<span class="tool-name" title="${escapeHtml(tool.name)}">${escapeHtml(tool.name)}</span>`
+    return `<div class="tool-row">${name}<div class="tool-track"><div class="tool-bar" style="width:${pct.toFixed(1)}%" title="${tip}"></div></div><span class="tool-count">${tool.calls}${fail}</span></div>`
   })
   return `<section class="card" id="tools"><h2>${escapeHtml(t('toolCallsSection', lang))}</h2>${rows.join('')}</section>`
 }
 
-function renderBlocks(blocks: readonly ContentBlock[], options: HtmlRenderOptions): string[] {
+function renderBlocks(blocks: readonly ContentBlock[], options: HtmlRenderOptions, seq = 0): string[] {
   const lang = options.lang ?? 'en'
   const parts: string[] = []
-  for (const block of blocks) {
+  blocks.forEach((block, index) => {
     if (block.type === 'reasoning') {
       parts.push(
         `<details class="reasoning"><summary>${escapeHtml(t('reasoning', lang))}</summary><div class="code-wrap"><pre>${escapeHtml(block.text.trim())}</pre><button class="copy" type="button">${escapeHtml(t('copyLabel', lang))}</button></div></details>`,
@@ -324,13 +351,14 @@ function renderBlocks(blocks: readonly ContentBlock[], options: HtmlRenderOption
     } else if (block.type === 'tool-call') {
       const parsed = parseToolArguments(block.arguments)
       const diff = renderToolDiff(block.name, parsed)
+      const id = ` id="${toolCallAnchor(seq, index)}"`
       if (diff) {
         parts.push(
-          `<details class="tool"><summary>🔧 ${escapeHtml(block.name)}</summary><div class="code-wrap"><pre class="diff">${escapeHtml(truncate(diff, options.resultCharLimit))}</pre><button class="copy" type="button">${escapeHtml(t('copyLabel', lang))}</button></div></details>`,
+          `<details class="tool"${id}><summary>🔧 ${escapeHtml(block.name)}</summary><div class="code-wrap"><pre class="diff">${escapeHtml(truncate(diff, options.resultCharLimit))}</pre><button class="copy" type="button">${escapeHtml(t('copyLabel', lang))}</button></div></details>`,
         )
       } else {
         parts.push(
-          `<details class="tool"><summary>🔧 ${escapeHtml(block.name)}</summary><div class="code-wrap"><pre>${renderCode(block.arguments, options.argCharLimit)}</pre><button class="copy" type="button">${escapeHtml(t('copyLabel', lang))}</button></div></details>`,
+          `<details class="tool"${id}><summary>🔧 ${escapeHtml(block.name)}</summary><div class="code-wrap"><pre>${renderCode(block.arguments, options.argCharLimit)}</pre><button class="copy" type="button">${escapeHtml(t('copyLabel', lang))}</button></div></details>`,
         )
       }
     } else if ('content' in block) {
@@ -343,7 +371,7 @@ function renderBlocks(blocks: readonly ContentBlock[], options: HtmlRenderOption
     } else {
       parts.push(`<div class="unsupported">(${escapeHtml(JSON.stringify(block.type))})</div>`)
     }
-  }
+  })
   return parts
 }
 
@@ -361,7 +389,7 @@ function renderEntry(entry: RenderInput['entries'][number], options: HtmlRenderO
       entry.usage !== undefined
         ? ` · ${fmtTokens(entry.usage.inputTokens)} in / ${fmtTokens(entry.usage.outputTokens)} out`
         : ''
-    const body = renderBlocks(message.content, options).join('\n')
+    const body = renderBlocks(message.content, options, entry.seq).join('\n')
     return `<article class="entry assistant"><header>🤖 ${escapeHtml(t('assistant', lang))} <span class="prov">${escapeHtml(provenance)}${escapeHtml(usage)}</span> <time>${time}</time></header>${body}</article>`
   }
   const toolResult = asToolResult(message)
@@ -371,10 +399,10 @@ function renderEntry(entry: RenderInput['entries'][number], options: HtmlRenderO
       entry.error !== undefined
         ? `<div class="error-banner">${escapeHtml(t('toolFailed', lang))} <code>${escapeHtml(entry.error.name)}</code> (<code>${escapeHtml(entry.error.code)}</code>)</div>`
         : ''
-    const body = renderBlocks(toolResult.content, options).join('\n')
+    const body = renderBlocks(toolResult.content, options, entry.seq).join('\n')
     return `<article class="entry tool-result${isError ? ' error' : ''}"${anchor}><header>🧾 ${escapeHtml(t('toolResult', lang))} <code>${escapeHtml(id8(String(toolResult.source.callId)))}</code>${isError ? ' <span class="fail">⚠ ERROR</span>' : ''} <time>${time}</time></header>${errorLine}${body}</article>`
   }
-  const body = renderBlocks(message.content, options).join('\n')
+  const body = renderBlocks(message.content, options, entry.seq).join('\n')
   return `<article class="entry user"><header>👤 ${escapeHtml(t('user', lang))} <time>${time}</time></header>${body}</article>`
 }
 
@@ -448,6 +476,9 @@ h2{font-size:15px;margin:0 0 12px;color:var(--muted);text-transform:uppercase;le
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:14px 0}
 .tl-row,.tool-row{display:flex;align-items:center;gap:10px;margin:6px 0}
 .tl-label,.tool-name{width:110px;flex:none;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+a.tool-name{color:inherit;text-decoration:none}
+a.tool-name:hover,a.tool-name:focus-visible{text-decoration:underline}
+a.tool-name:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .tl-track,.tool-track{flex:1;height:12px;background:var(--line);border-radius:6px;overflow:hidden}
 .tl-bar,.tool-bar{height:100%;border-radius:6px}
 .tool-bar{background:var(--accent);opacity:.8}

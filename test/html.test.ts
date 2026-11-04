@@ -54,6 +54,16 @@ function buildInput(overrides?: Partial<RenderInput>): RenderInput {
 }
 
 describe('renderHtml', () => {
+  it('tool ranking links to the first call of each tool (#7)', () => {
+    const out = renderHtml(buildInput())
+    // bash first appears at entry seq 2, content index 1 (after reasoning);
+    // read first appears at entry seq 5, content index 0.
+    expect(out).toContain('<a class="tool-name" href="#tc-2-1" title="bash">bash</a>')
+    expect(out).toContain('<a class="tool-name" href="#tc-5-0" title="read">read</a>')
+    expect(out).toContain('<details class="tool" id="tc-2-1">')
+    expect(out).toContain('<details class="tool" id="tc-5-0">')
+  })
+
   it('emits a complete single-file document', () => {
     const out = renderHtml(buildInput())
     expect(out).toContain('<!doctype html>')
@@ -107,7 +117,7 @@ describe('renderHtml', () => {
 
   it('uses native details folding for tools and reasoning', () => {
     const out = renderHtml(buildInput())
-    expect(out).toContain('<details class="tool">')
+    expect(out).toMatch(/<details class="tool" id="tc-\d+-\d+">/)
     expect(out).toContain('<details class="reasoning">')
     expect(out).toContain('<details class="tool-result" open>')
   })
