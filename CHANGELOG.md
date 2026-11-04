@@ -1,3 +1,12 @@
+## 1.9.0 — 2026-11-04
+
+Diff-block integrity and ranking anchors (#5, #7).
+
+- Markdown: a diff whose own content lines start with `+`/`-` no longer widens the block — the marker is re-prefixed with a space (`- -x`), so the content's own marker stays visible instead of merging into markup (#5).
+- Markdown: any fenced body containing a ``` line is emitted with a four-backtick fence, so tool results that quote fenced code stay exactly one block (#5).
+- HTML: each tool-ranking bar is now a keyboard-focusable link to the first call of that tool in the transcript — call rows carry stable `tc-<seq>-<block>` ids, focus outlines work in both themes, no external assets (#7).
+- README "Current gaps" refreshed; both shipped items removed from the open list.
+
 ## 1.8.6 — 2026-10-10
 
 Connection-string redaction (via #8 by varshith84).
