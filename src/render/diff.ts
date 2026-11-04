@@ -22,7 +22,11 @@ export function parseToolArguments(raw: string): unknown | null {
 }
 
 function diffLine(prefix: '-' | '+', line: string): string {
-  return `${prefix}${line}`
+  // A content line that itself starts with a diff marker merges into the
+  // marker (`--x` reads as extra markup, `---x` as a file header), widening
+  // what reads as diff; re-prefix with a space so the marker stays one char
+  // and the content's own marker stays visible (#5).
+  return line.startsWith('+') || line.startsWith('-') ? `${prefix} ${line}` : `${prefix}${line}`
 }
 
 /**

@@ -143,6 +143,39 @@ describe('renderMarkdown', () => {
   })
 })
 
+describe('renderMarkdown diff blocks (#5)', () => {
+  it('renders a diff whose content lines start with + or - as one diff block', () => {
+    const md = renderMarkdown(
+      input([
+        entry(
+          1,
+          assistantMessage('edit', {
+            name: 'str_replace_editor',
+            args: JSON.stringify({ file_path: 'a.patch', old_string: '-old', new_string: '+new' }),
+          }),
+        ),
+      ]),
+    )
+    expect(md.match(/^```diff$/gm)).toHaveLength(1)
+    expect(md).toContain('- -old')
+    expect(md).toContain('+ +new')
+    expect(md).not.toContain('--old')
+    expect(md).not.toContain('++new\n')
+  })
+
+  it('keeps a tool result whose content contains a fence line as one block (#5)', () => {
+    const md = renderMarkdown(
+      input([
+        entry(1, assistantMessage('run', { name: 'bash', args: '{"command":"cat README.md"}' })),
+        entry(2, toolResult('before\n```js\ncode()\n```\nafter')),
+      ]),
+    )
+    expect(md.match(/^````text$/gm)).toHaveLength(1)
+    expect(md).toContain('```js')
+    expect(md).toContain('after')
+  })
+})
+
 describe('renderJson', () => {
   it('produces a versioned structured document', () => {
     const json = renderJson(input([entry(1, userMessage('hi'))]))

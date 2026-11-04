@@ -98,7 +98,11 @@ function renderLineage(input: RenderInput): string | null {
 }
 
 function fence(lang: string, body: string): string {
-  return `\`\`\`${lang}\n${body}\n\`\`\``
+  // A body line starting with ``` would close a three-backtick fence early
+  // and split the block; those bodies get a four-backtick fence so every
+  // diff or json block stays exactly one block (#5).
+  const open = /^`{3}/m.test(body) ? '````' : '```'
+  return `${open}${lang}\n${body}\n${open}`
 }
 
 function renderAssistantMessage(

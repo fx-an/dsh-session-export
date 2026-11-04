@@ -198,11 +198,7 @@ Plugin row config (all optional):
 
 ## Current gaps
 
-Shipped roadmap items live in the [CHANGELOG](CHANGELOG.md). Open work is tracked in issues:
-
-- [#5 — Markdown: content lines starting with `+`/`-` must not widen diff blocks](https://github.com/kittimzhe/dsh-session-export/issues/5)
-- [#6 — Redaction: connection-string pattern (postgres/redis/mysql URLs with credentials)](https://github.com/kittimzhe/dsh-session-export/issues/6)
-- [#7 — HTML report: tool-ranking bars link to the first call of that tool](https://github.com/kittimzhe/dsh-session-export/issues/7)
+Shipped roadmap items live in the [CHANGELOG](CHANGELOG.md). Open work is tracked in [issues](https://github.com/kittimzhe/dsh-session-export/issues); the former top three (#5 diff-block widening, #6 connection-string redaction, #7 ranking anchors) all shipped.
 
 ## Known limitations
 
@@ -211,7 +207,7 @@ Shipped roadmap items live in the [CHANGELOG](CHANGELOG.md). Open work is tracke
 - Token totals sum per-assistant-message `usage` records; steps whose adapter reported no usage contribute zero.
 - Cost is an estimate from list prices; cache-hit discounts are not modeled (`cacheReadTokens` is not priced separately).
 - Masking is pattern-based and best-effort: it redacts common credential shapes, not all possible secrets.
-- Markdown escapes nothing inside fenced blocks; a diff whose own lines start with `+`/`-` renders as additional diff lines (see [#5](https://github.com/kittimzhe/dsh-session-export/issues/5)).
+- Markdown escapes only what can break a block: diff content lines starting with `+`/`-` are re-prefixed with a space, and bodies containing a ``` line get a four-backtick fence; other content passes through verbatim.
 - `/archive` is export-only: there is no restore/import because DSH exposes no write-side session seam, so the ZIP is a backup, not a round-trip.
 
 ## Development

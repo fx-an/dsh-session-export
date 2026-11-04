@@ -34,6 +34,17 @@ describe('renderToolDiff', () => {
   it('returns null for editor tool without mutation fields', () => {
     expect(renderToolDiff('edit', { file_path: 'a' })).toBeNull()
   })
+
+  it('re-prefixes content lines that start with a diff marker (#5)', () => {
+    const body = renderToolDiff('edit', {
+      file_path: 'p.patch',
+      old_string: '-gone',
+      new_string: '+here\nplain',
+    })
+    expect(body).toBe(
+      ['--- a/p.patch', '+++ b/p.patch', '@@ edit @@', '- -gone', '+ +here', '+plain'].join('\n'),
+    )
+  })
 })
 
 describe('renderEditorDiff', () => {
