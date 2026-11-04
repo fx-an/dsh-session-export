@@ -207,7 +207,7 @@ dsh plugin --profile web add github:kittimzhe/dsh-session-export
 - Token 汇总按 assistant 消息的 `usage` 记录累加；适配器未上报 usage 的步骤计零。
 - 成本为牌价估算；未建模缓存命中折扣（`cacheReadTokens` 不单独计价）。
 - 脱敏基于模式匹配、尽力而为：覆盖常见凭据形态，不保证遮蔽所有可能的秘密。
-- Markdown 只对可能破坏代码块的内容做处理：`+`/`-` 开头的 diff 内容行重加前缀空格；含 ``` 行的内容体改用四反引号围栏；其余内容原样输出。
+- Markdown 只对可能破坏代码块的内容做处理：`+`/`-` 开头的 diff 内容行重加前缀空格；含三个反引号开头之行的内容体改用四反引号围栏；其余内容原样输出。
 - `/archive` 只出不进：DSH 没有写侧会话接缝，ZIP 是备份不是往返。
 
 ## 开发
