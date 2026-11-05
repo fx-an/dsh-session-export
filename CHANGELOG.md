@@ -1,3 +1,10 @@
+## 1.9.1 — 2026-11-05
+
+Peer-range compatibility release (no behavior change).
+
+- `@deepseek-ai/dsh-*` peers widened to `^0.1.5-rc.3 || ^0.2.0 || 0.2.2-rc.1` and `@deepseek-ai/cordis` to `^4.0.2`, ahead of the DSH 0.2.2 release train.
+- Verified against `@deepseek-ai/*@0.2.2-rc.1` in a scratch install: full suite 223/223 green, typecheck clean. DSH profiles remain unaffected either way (the host satisfies peers via its shadow-scoped runtime).
+
 ## 1.9.0 — 2026-11-04
 
 Diff-block integrity and ranking anchors (#5, #7).
